@@ -1,5 +1,7 @@
+package model;
+
 public enum Status {
-    TODO("To do"),
+    NEW("New"),
     IN_PROGRESS("In Progress"),
     DONE("Done");
 
