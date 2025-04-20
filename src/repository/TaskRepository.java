@@ -2,14 +2,16 @@ package repository;
 
 import model.Task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface TaskRepository {
     Task findTaskById(int id);
-    Task findTaskByName(String name);
-    Task findTaskByDescription(String description);
+    ArrayList<Task> findTaskByName(String name);
+    ArrayList<Task> findTaskByDescription(String description);
     List<Task> findAllTasks();
-    void saveTask(Task task);
+    Task saveTask(Task task);
+    void updateTask(Task task);
     void deleteTask(int id);
     void deleteAllTasks();
 }
