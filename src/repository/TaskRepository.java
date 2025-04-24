@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface TaskRepository {
     Task findTaskById(int id);
-    ArrayList<Task> findTaskByName(String name);
+    ArrayList<Task> findTaskByTitle(String name);
     ArrayList<Task> findTaskByDescription(String description);
     List<Task> findAllTasks();
     Task saveTask(Task task);

@@ -5,7 +5,7 @@ import model.Epic;
 import java.util.List;
 
 public interface EpicService {
-    void createEpic(Epic epic);
+    Epic createEpic(Epic epic);
     List<Epic> getAllEpics();
     Epic getEpic(int id);
     void updateEpic(Epic epic);

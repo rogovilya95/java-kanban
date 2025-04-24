@@ -1,15 +1,17 @@
 package repository;
 
-import model.Task;
+import model.Epic;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface EpicRepository {
-    Task findEpicById(int id);
-    Task findEpicByName(String name);
-    Task findEpicByDescription(String description);
-    List<Task> findAllEpics();
-    void saveEpic(Task task);
+    Epic findEpicById(int id);
+    ArrayList<Epic> findEpicByTitle(String title);
+    ArrayList<Epic> findEpicByDescription(String description);
+    List<Epic> findAllEpics();
+    Epic saveEpic(Epic epic);
+    void updateEpic(Epic epic);
     void deleteEpic(int id);
     void deleteAllEpics();
 }

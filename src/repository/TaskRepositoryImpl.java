@@ -18,7 +18,7 @@ public class TaskRepositoryImpl implements TaskRepository {
     }
 
     @Override
-    public ArrayList<Task> findTaskByName(String title) {
+    public ArrayList<Task> findTaskByTitle(String title) {
         ArrayList<Task> result = new ArrayList<>();
 
         if (title == null) {

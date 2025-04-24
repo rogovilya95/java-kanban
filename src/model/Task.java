@@ -25,6 +25,7 @@ public class Task {
     public Task(String title, String description) {
         this.title = title;
         this.description = description;
+        this.status = Status.NEW;
     }
 
     public int getId() {
@@ -74,7 +75,7 @@ public class Task {
 
     @Override
     public String toString() {
-        return "model.Task{" +
+        return "Task{" +
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", description='" + description + '\'' +
