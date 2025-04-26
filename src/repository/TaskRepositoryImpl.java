@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class TaskRepositoryImpl implements TaskRepository {
 
-    Map<Integer, Task> tasks = new HashMap<>();
+    private final Map<Integer, Task> tasks = new HashMap<>();
 
     @Override
     public Task findTaskById(int id) {
@@ -58,6 +58,9 @@ public class TaskRepositoryImpl implements TaskRepository {
 
     @Override
     public Task saveTask(Task task) {
+        // Note: I think it is better to create IDs in TaskManager so all tasks use the same ID system
+        // and to keep repositories focused only on storage,
+        // also current version is easier to be replaced if i want to change the method of ID generation
         tasks.put(task.getId(), task);
         return task;
     }

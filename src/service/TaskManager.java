@@ -54,29 +54,32 @@ public class TaskManager implements TaskService,  SubtaskService, EpicService {
             throw new TaskNotFoundException("Epic with id " + id +" not found");
         }
         List<Subtask> subtasks = getEpicSubtasks(epic.getId());
+
+        Status newStatus;
         if (subtasks.isEmpty()) {
-            epic.setStatus(Status.NEW);
-            return;
-        }
-        boolean allNew = true;
-        boolean allDone = true;
-        for (Subtask subtask : subtasks) {
-            if (subtask.getStatus() != Status.NEW) {
-                allNew = false;
+            newStatus = Status.NEW;
+        } else {
+            boolean allNew = true;
+            boolean allDone = true;
+            for (Subtask subtask : subtasks) {
+                if (subtask.getStatus() != Status.NEW) {
+                    allNew = false;
+                }
+                if (subtask.getStatus() != Status.DONE) {
+                    allDone = false;
+                }
             }
-            if (subtask.getStatus() != Status.DONE) {
-                allDone = false;
+
+            if (allNew) {
+                newStatus = Status.NEW;
+            } else if (allDone) {
+                newStatus = Status.DONE;
+            } else {
+                newStatus = Status.IN_PROGRESS;
             }
         }
 
-        if (allNew) {
-            epic.setStatus(Status.NEW);
-        } else if (allDone) {
-            epic.setStatus(Status.DONE);
-        } else  {
-            epic.setStatus(Status.IN_PROGRESS);
-        }
-
+        epic.setStatus(newStatus);
         epicRepository.updateEpic(epic);
     }
 
@@ -175,11 +178,17 @@ public class TaskManager implements TaskService,  SubtaskService, EpicService {
 
     @Override
     public void deleteAllSubtask() {
-        for (Epic epic : epicRepository.findAllEpics()) {
-            epic.getSubtaskIds().clear();
-            epic.setStatus(Status.NEW);
-            epicRepository.updateEpic(epic);
+        List<Epic> allEpics = epicRepository.findAllEpics();
+
+        for (Epic epic : allEpics) {
+            Epic currentEpic = epicRepository.findEpicById(epic.getId());
+            if (currentEpic != null) {
+                currentEpic.getSubtaskIds().clear();
+                currentEpic.setStatus(Status.NEW);
+                epicRepository.updateEpic(currentEpic);
+            }
         }
+
         subtaskRepository.deleteAllSubtasks();
     }
 

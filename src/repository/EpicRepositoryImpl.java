@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class EpicRepositoryImpl implements EpicRepository {
 
-    Map<Integer, Epic> epics = new HashMap<Integer, Epic>();
+    private final Map<Integer, Epic> epics = new HashMap<>();
 
     @Override
     public Epic findEpicById(int id) {
@@ -19,7 +19,6 @@ public class EpicRepositoryImpl implements EpicRepository {
 
     @Override
     public ArrayList<Epic> findEpicByTitle(String title) {
-
         ArrayList<Epic> result = new ArrayList<>();
         if (title == null) {
             return result;
@@ -55,7 +54,7 @@ public class EpicRepositoryImpl implements EpicRepository {
     public Epic saveEpic(Epic epic) {
         epics.put(epic.getId(), epic);
         return epic;
-        }
+    }
 
     @Override
     public void updateEpic(Epic epic) {
@@ -68,10 +67,14 @@ public class EpicRepositoryImpl implements EpicRepository {
     @Override
     public void deleteEpic(int id) {
         epics.remove(id);
+        // Note: TaskManager will handle deleting the subtasks, not this class.
+        // This is because connecting tasks is business logic, not storage.
     }
 
     @Override
     public void deleteAllEpics() {
         epics.clear();
+        // Note: TaskManager will delete the subtasks too.
+        // Repositories should only work with their own data.
     }
 }

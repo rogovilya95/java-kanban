@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class SubtaskRepositoryImpl implements  SubtaskRepository {
-    Map<Integer, Subtask> subtasks = new HashMap<>();
+public class SubtaskRepositoryImpl implements SubtaskRepository {
+    private final Map<Integer, Subtask> subtasks = new HashMap<>();
+    private final Map<Integer, List<Integer>> subtasksByEpicId = new HashMap<>();
 
     @Override
     public Subtask findSubtaskById(int id) {
@@ -55,34 +57,65 @@ public class SubtaskRepositoryImpl implements  SubtaskRepository {
 
     @Override
     public List<Subtask> findByEpicId(int epicId) {
-        ArrayList<Subtask> result = new ArrayList<>();
-        for (Subtask subtask : subtasks.values()) {
-            if (subtask.getEpicId() == epicId) {
-                result.add(subtask);
-            }
-        }
-        return result;
+        List<Integer> subtaskIds = subtasksByEpicId.getOrDefault(epicId, new ArrayList<>());
+        return subtaskIds.stream()
+                .map(subtasks::get)
+                .collect(Collectors.toList());
     }
 
     @Override
     public Subtask saveSubtask(Subtask subtask) {
-        subtasks.put(subtask.getId(), subtask);
+        int subtaskId = subtask.getId();
+        int epicId = subtask.getEpicId();
+
+        subtasks.put(subtaskId, subtask);
+
+        subtasksByEpicId.computeIfAbsent(epicId, k -> new ArrayList<>()).add(subtaskId);
+
         return subtask;
     }
 
+    @Override
     public void updateSubtask(Subtask subtask) {
-        if (!subtasks.containsKey(subtask.getId())) {
-            throw new TaskNotFoundException(subtask.getId());
+        int subtaskId = subtask.getId();
+        int newEpicId = subtask.getEpicId();
+
+        if (!subtasks.containsKey(subtaskId)) {
+            throw new TaskNotFoundException(subtaskId);
         }
+
+        Subtask oldSubtask = subtasks.get(subtaskId);
+        int oldEpicId = oldSubtask.getEpicId();
+
+        if (oldEpicId != newEpicId) {
+            List<Integer> oldEpicSubtasks = subtasksByEpicId.get(oldEpicId);
+            if (oldEpicSubtasks != null) {
+                oldEpicSubtasks.remove(Integer.valueOf(subtaskId));
+            }
+
+            subtasksByEpicId.computeIfAbsent(newEpicId, k -> new ArrayList<>()).add(subtaskId);
+        }
+
+        subtasks.put(subtaskId, subtask);
     }
 
     @Override
     public void deleteSubtask(int id) {
-        subtasks.remove(id);
+        Subtask subtask = subtasks.get(id);
+        if (subtask != null) {
+            int epicId = subtask.getEpicId();
+            subtasks.remove(id);
+
+            List<Integer> epicSubtasks = subtasksByEpicId.get(epicId);
+            if (epicSubtasks != null) {
+                epicSubtasks.remove(Integer.valueOf(id));
+            }
+        }
     }
 
     @Override
     public void deleteAllSubtasks() {
         subtasks.clear();
+        subtasksByEpicId.clear();
     }
 }

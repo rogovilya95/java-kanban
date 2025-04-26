@@ -28,8 +28,13 @@ public class Epic extends Task {
         this.subtaskIds.add(id);
     }
 
-    public void removeSubtaskId(int id) {
-        this.subtaskIds.remove(id);
+    public void removeSubtaskId(Integer id) {
+        this.subtaskIds.remove(Integer.valueOf(id));
+    }
+
+    @Override
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     @Override
