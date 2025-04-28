@@ -9,7 +9,6 @@ public interface EpicService {
     List<Epic> getAllEpics();
     Epic getEpic(int id);
     void updateEpic(Epic epic);
-    void updateEpicStatus(int id);
     void deleteEpic(int id);
     void deleteAllEpics();
 }

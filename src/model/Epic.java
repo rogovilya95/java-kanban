@@ -17,7 +17,7 @@ public class Epic extends Task {
     }
 
     public ArrayList<Integer> getSubtaskIds() {
-        return subtaskIds;
+        return new ArrayList<>(subtaskIds);
     }
 
     public void setSubtaskIds(ArrayList<Integer> subtaskIds) {
@@ -34,7 +34,11 @@ public class Epic extends Task {
 
     @Override
     public void setStatus(Status status) {
-        this.status = status;
+        throw new UnsupportedOperationException("Epic status cannot be set directly. It is calculated based on subtasks.");
+    }
+
+    public void updateStatusFromTaskManager(Status status) {
+        super.setStatus(status);
     }
 
     @Override

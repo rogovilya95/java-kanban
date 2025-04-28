@@ -28,8 +28,9 @@ public class TaskManager implements TaskService,  SubtaskService, EpicService {
     @Override
     public Epic createEpic(Epic epic) {
         epic.setId(idGenerator.generateId());
-        return epicRepository.saveEpic(epic);
-
+        Epic createdEpic = epicRepository.saveEpic(epic);
+        updateEpicStatus(createdEpic.getId());
+        return createdEpic;
     }
 
     @Override
@@ -45,10 +46,10 @@ public class TaskManager implements TaskService,  SubtaskService, EpicService {
     @Override
     public void updateEpic(Epic epic) {
         epicRepository.updateEpic(epic);
+        updateEpicStatus(epic.getId());
     }
 
-    @Override
-    public void updateEpicStatus(int id) {
+    private void updateEpicStatus(int id) {
         Epic epic = epicRepository.findEpicById(id);
         if (epic == null) {
             throw new TaskNotFoundException("Epic with id " + id +" not found");
@@ -79,7 +80,7 @@ public class TaskManager implements TaskService,  SubtaskService, EpicService {
             }
         }
 
-        epic.setStatus(newStatus);
+        epic.updateStatusFromTaskManager(newStatus);
         epicRepository.updateEpic(epic);
     }
 
@@ -184,7 +185,7 @@ public class TaskManager implements TaskService,  SubtaskService, EpicService {
             Epic currentEpic = epicRepository.findEpicById(epic.getId());
             if (currentEpic != null) {
                 currentEpic.getSubtaskIds().clear();
-                currentEpic.setStatus(Status.NEW);
+                epic.updateStatusFromTaskManager(Status.NEW);
                 epicRepository.updateEpic(currentEpic);
             }
         }
