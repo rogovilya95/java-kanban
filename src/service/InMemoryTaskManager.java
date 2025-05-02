@@ -46,7 +46,11 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Epic getEpic(int id) {
-        return epicRepository.findEpicById(id);
+        Epic epic = epicRepository.findEpicById(id);
+        if (epic != null) {
+            historyManager.add(epic);
+        }
+        return epic;
     }
 
     @Override
@@ -110,6 +114,9 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Subtask createSubtask(Subtask subtask) {
+        if (subtask.getId() != 0 && subtask.getId() == subtask.getEpicId()) {
+            throw new IllegalArgumentException("Subtask cannot be its own epic");
+        }
 
         Epic epic = epicRepository.findEpicById(subtask.getEpicId());
         if (epic == null) {
@@ -132,7 +139,11 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Subtask getSubtask(int id) {
-        return subtaskRepository.findSubtaskById(id);
+        Subtask subtask = subtaskRepository.findSubtaskById(id);
+        if (subtask != null) {
+            historyManager.add(subtask);
+        }
+        return subtask;
     }
 
     @Override
@@ -146,6 +157,10 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public void updateSubtask(Subtask subtask) {
+        if (subtask.getId() == subtask.getEpicId()) {
+            throw new IllegalArgumentException("Subtask cannot be its own epic");
+        }
+
         Subtask subtaskToUpdate = subtaskRepository.findSubtaskById(subtask.getId());
         if (subtaskToUpdate == null) {
             throw new TaskNotFoundException("Subtask with id " + subtask.getId() + " not found");
@@ -202,7 +217,9 @@ public class InMemoryTaskManager implements TaskManager{
     @Override
     public Task createTask(Task task) {
         task.setId(idGenerator.generateId());
-        task.setStatus(Status.NEW);
+        if (task.getStatus() == null) {
+            task.setStatus(Status.NEW);
+        }
         return taskRepository.saveTask(task);
     }
 
@@ -213,7 +230,11 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Task getTask(int id) {
-        return taskRepository.findTaskById(id);
+        Task task = taskRepository.findTaskById(id);
+        if (task != null) {
+            historyManager.add(task);
+        }
+        return task;
     }
 
     @Override
@@ -231,4 +252,8 @@ public class InMemoryTaskManager implements TaskManager{
         taskRepository.deleteAllTasks();
     }
 
+    @Override
+    public List<Task> getHistory() {
+        return historyManager.getHistory();
+    }
 }

@@ -1,7 +1,5 @@
-import service.IdGenerator;
-import service.IdGeneratorImpl;
+import service.Managers;
 import service.TaskManager;
-import repository.*;
 import model.*;
 import exception.TaskNotFoundException;
 
@@ -11,11 +9,8 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            IdGenerator idGenerator = new IdGeneratorImpl();
-            TaskRepository taskRepository = new TaskRepositoryImpl();
-            EpicRepository epicRepository = new EpicRepositoryImpl();
-            SubtaskRepository subtaskRepository = new SubtaskRepositoryImpl();
-            TaskManager taskManager = new TaskManager(idGenerator, taskRepository, subtaskRepository, epicRepository);
+            // Получаем менеджер через утилитарный класс
+            TaskManager taskManager = Managers.getDefault();
 
             // 1. Создаем две задачи
             System.out.println("##############################");
@@ -117,7 +112,6 @@ public class Main {
             System.out.println("### Удаление задач ###");
             System.out.println("######################");
 
-
             // Удаляем задачу
             taskManager.deleteTask(task2.getId());
             System.out.println("Задача '" + task2.getTitle() + "' удалена");
@@ -129,17 +123,7 @@ public class Main {
             System.out.println("Оставшиеся эпики: " + taskManager.getAllEpics().size());
             System.out.println("Оставшиеся подзадачи: " + taskManager.getAllSubtasks().size());
 
-            // 7. Поиск задач по имени
-            System.out.println("\n###############################");
-            System.out.println("### Поиск задач по названию ###");
-            System.out.println("###############################");
-            List<Task> foundTasks = taskRepository.findTaskByTitle("Доделать проект");
-            System.out.println("Найдено задач с названием 'Доделать проект': " + foundTasks.size());
-            for (Task task : foundTasks) {
-                System.out.println("- " + task);
-            }
-
-            // 8. Выводим финальное состояние системы
+            // 7. Выводим финальное состояние системы
             System.out.println("\n###################################");
             System.out.println("### Финальное состояние системы ###");
             System.out.println("###################################");
@@ -166,6 +150,26 @@ public class Main {
                         System.out.println("* " + subtask);
                     }
                 }
+            }
+
+            // 8. Демонстрация истории просмотров
+            System.out.println("\n######################################");
+            System.out.println("### Демонстрация истории просмотров ###");
+            System.out.println("######################################");
+
+            // Просматриваем несколько задач, чтобы сформировать историю
+            System.out.println("Просмотр задачи: " + task1.getTitle());
+            taskManager.getTask(task1.getId());
+
+            System.out.println("Просмотр эпика: " + birthday.getTitle());
+            taskManager.getEpic(birthday.getId());
+
+            System.out.println("Просмотр подзадачи: " + invites.getTitle());
+            taskManager.getSubtask(invites.getId());
+
+            System.out.println("\nИстория просмотров:");
+            for (Task task : taskManager.getHistory()) {
+                System.out.println("- " + task);
             }
 
         } catch (TaskNotFoundException e) {
