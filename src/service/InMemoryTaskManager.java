@@ -100,14 +100,25 @@ public class InMemoryTaskManager implements TaskManager{
         if (epicToDelete == null) {
             throw new TaskNotFoundException("Epic with id " + id + " not found");
         }
+
         for (Integer subtaskId : epicToDelete.getSubtaskIds()) {
             subtaskRepository.deleteSubtask(subtaskId);
+            historyManager.remove(subtaskId);
         }
+
         epicRepository.deleteEpic(id);
+        historyManager.remove(id);
     }
 
     @Override
     public void deleteAllEpics() {
+        for (Epic epic : getAllEpics()) {
+            historyManager.remove(epic.getId());
+        }
+        for (Subtask subtask : getAllSubtasks()) {
+            historyManager.remove(subtask.getId());
+        }
+
         subtaskRepository.deleteAllSubtasks();
         epicRepository.deleteAllEpics();
     }
@@ -200,6 +211,10 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public void deleteAllSubtask() {
+        for (Subtask subtask : getAllSubtasks()) {
+            historyManager.remove(subtask.getId());
+        }
+
         List<Epic> allEpics = epicRepository.findAllEpics();
 
         for (Epic epic : allEpics) {
@@ -245,10 +260,15 @@ public class InMemoryTaskManager implements TaskManager{
     @Override
     public void deleteTask(int id) {
         taskRepository.deleteTask(id);
+        historyManager.remove(id);
     }
 
     @Override
     public void deleteAllTasks() {
+        for (Task task : getAllTasks()) {
+            historyManager.remove(task.getId());
+        }
+
         taskRepository.deleteAllTasks();
     }
 
