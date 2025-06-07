@@ -1,6 +1,6 @@
 package service;
 
-public class IdGeneratorImpl implements IdGenerator{
+public class IdGeneratorImpl implements IdGenerator {
 
     private int id = 1;
 

@@ -11,7 +11,7 @@ import repository.TaskRepository;
 
 import java.util.List;
 
-public class InMemoryTaskManager implements TaskManager{
+public class InMemoryTaskManager implements TaskManager {
 
     private final IdGenerator idGenerator;
     private final TaskRepository taskRepository;
