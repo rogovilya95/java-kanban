@@ -28,7 +28,7 @@ public class EpicRepositoryImpl implements EpicRepository {
             return result;
         }
         for (Epic epic : epics.values()) {
-            if(title.equalsIgnoreCase(epic.getTitle())) {
+            if (title.equalsIgnoreCase(epic.getTitle())) {
                 result.add(copyEpic(epic));
             }
         }
@@ -42,7 +42,7 @@ public class EpicRepositoryImpl implements EpicRepository {
             return result;
         }
         for (Epic epic : epics.values()) {
-            if(description.equalsIgnoreCase(epic.getDescription())) {
+            if (description.equalsIgnoreCase(epic.getDescription())) {
                 result.add(copyEpic(epic));
             }
         }
@@ -67,7 +67,7 @@ public class EpicRepositoryImpl implements EpicRepository {
 
     @Override
     public void updateEpic(Epic epic) {
-        if(!epics.containsKey(epic.getId())) {
+        if (!epics.containsKey(epic.getId())) {
             throw new TaskNotFoundException(epic.getId());
         }
         epics.put(epic.getId(), copyEpic(epic));

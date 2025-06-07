@@ -190,7 +190,7 @@ public class InMemoryTaskManager implements TaskManager{
         int oldEpicId = subtaskToUpdate.getEpicId();
         int newEpicId = subtask.getEpicId();
 
-        if(oldEpicId != newEpicId) {
+        if (oldEpicId != newEpicId) {
             Epic oldEpic = epicRepository.findEpicById(oldEpicId);
             Epic newEpic = epicRepository.findEpicById(newEpicId);
             if (newEpic == null) {

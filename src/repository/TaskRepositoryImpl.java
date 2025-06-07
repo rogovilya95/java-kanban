@@ -30,7 +30,7 @@ public class TaskRepositoryImpl implements TaskRepository {
         }
 
         for (Task task : tasks.values()) {
-            if(title.equalsIgnoreCase(task.getTitle())) {
+            if (title.equalsIgnoreCase(task.getTitle())) {
                 result.add(copyTask(task));
             }
         }
@@ -47,7 +47,7 @@ public class TaskRepositoryImpl implements TaskRepository {
         }
 
         for (Task task : tasks.values()) {
-            if(description.equalsIgnoreCase(task.getDescription())) {
+            if (description.equalsIgnoreCase(task.getDescription())) {
                 result.add(copyTask(task));
             }
         }
