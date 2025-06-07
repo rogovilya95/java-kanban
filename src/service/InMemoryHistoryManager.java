@@ -1,5 +1,7 @@
 package service;
 
+import model.Epic;
+import model.Subtask;
 import model.Task;
 
 import java.util.ArrayList;
@@ -40,8 +42,8 @@ public class InMemoryHistoryManager implements HistoryManager {
         if (taskNodes.containsKey(taskId)) {
             removeNode(taskNodes.get(taskId));
         }
-
-        Node newNode = linkLast(task);
+        Task taskCopy = createTaskCopy(task);
+        Node newNode = linkLast(taskCopy);
         taskNodes.put(taskId, newNode);
     }
 
@@ -82,5 +84,25 @@ public class InMemoryHistoryManager implements HistoryManager {
     private void removeNode(Node node) {
         node.prev.next = node.next;
         node.next.prev = node.prev;
+    }
+
+    private Task createTaskCopy(Task original) {
+        if (original instanceof Epic originalEpic) {
+            Epic copy = new Epic(originalEpic.getTitle(), originalEpic.getDescription());
+            copy.setId(originalEpic.getId());
+            copy.updateStatusFromTaskManager(originalEpic.getStatus());
+            copy.setSubtaskIds(new ArrayList<>(originalEpic.getSubtaskIds()));
+            return copy;
+        } else if (original instanceof Subtask originalSubtask) {
+            Subtask copy = new Subtask(originalSubtask.getTitle(), originalSubtask.getDescription(), originalSubtask.getEpicId());
+            copy.setId(originalSubtask.getId());
+            copy.setStatus(originalSubtask.getStatus());
+            return copy;
+        } else {
+            Task copy = new Task(original.getTitle(), original.getDescription());
+            copy.setId(original.getId());
+            copy.setStatus(original.getStatus());
+            return copy;
+        }
     }
 }

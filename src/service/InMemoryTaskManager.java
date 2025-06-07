@@ -33,8 +33,9 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Epic createEpic(Epic epic) {
-        epic.setId(idGenerator.generateId());
-        Epic createdEpic = epicRepository.saveEpic(epic);
+        Epic epicCopy = new Epic(epic.getTitle(), epic.getDescription());
+        epicCopy.setId(idGenerator.generateId());
+        Epic createdEpic = epicRepository.saveEpic(epicCopy);
         updateEpicStatus(createdEpic.getId());
         return createdEpic;
     }
@@ -48,9 +49,11 @@ public class InMemoryTaskManager implements TaskManager{
     public Epic getEpic(int id) {
         Epic epic = epicRepository.findEpicById(id);
         if (epic != null) {
-            historyManager.add(epic);
+            Epic epicCopy = copyEpic(epic);
+            historyManager.add(epicCopy);
+            return epicCopy;
         }
-        return epic;
+        return null;
     }
 
     @Override
@@ -134,9 +137,14 @@ public class InMemoryTaskManager implements TaskManager{
             throw new TaskNotFoundException("Epic with id " + subtask.getEpicId() + " not found");
         }
 
-        subtask.setId(idGenerator.generateId());
-        Subtask createdSubtask = subtaskRepository.saveSubtask(subtask);
-        epic.addSubtaskId(subtask.getId());
+        Subtask subtaskCopy = new Subtask(subtask.getTitle(), subtask.getDescription(), subtask.getEpicId());
+        if (subtask.getStatus() != null) {
+            subtaskCopy.setStatus(subtask.getStatus());
+        }
+        subtaskCopy.setId(idGenerator.generateId());
+
+        Subtask createdSubtask = subtaskRepository.saveSubtask(subtaskCopy);
+        epic.addSubtaskId(subtaskCopy.getId());
         epicRepository.updateEpic(epic);
         updateEpicStatus(epic.getId());
 
@@ -152,9 +160,11 @@ public class InMemoryTaskManager implements TaskManager{
     public Subtask getSubtask(int id) {
         Subtask subtask = subtaskRepository.findSubtaskById(id);
         if (subtask != null) {
-            historyManager.add(subtask);
+            Subtask subtaskCopy = copySubtask(subtask);
+            historyManager.add(subtaskCopy);
+            return subtaskCopy;
         }
-        return subtask;
+        return null;
     }
 
     @Override
@@ -176,11 +186,15 @@ public class InMemoryTaskManager implements TaskManager{
         if (subtaskToUpdate == null) {
             throw new TaskNotFoundException("Subtask with id " + subtask.getId() + " not found");
         }
-        if(subtaskToUpdate.getEpicId() != subtask.getEpicId()) {
-            Epic oldEpic = epicRepository.findEpicById(subtaskToUpdate.getEpicId());
-            Epic newEpic = epicRepository.findEpicById(subtask.getEpicId());
+
+        int oldEpicId = subtaskToUpdate.getEpicId();
+        int newEpicId = subtask.getEpicId();
+
+        if(oldEpicId != newEpicId) {
+            Epic oldEpic = epicRepository.findEpicById(oldEpicId);
+            Epic newEpic = epicRepository.findEpicById(newEpicId);
             if (newEpic == null) {
-                throw new TaskNotFoundException("Epic with id " + subtask.getEpicId() + " not found");
+                throw new TaskNotFoundException("Epic with id " + newEpicId + " not found");
             }
             if (oldEpic != null) {
                 oldEpic.removeSubtaskId(subtask.getId());
@@ -207,6 +221,7 @@ public class InMemoryTaskManager implements TaskManager{
             updateEpicStatus(epic.getId());
         }
         subtaskRepository.deleteSubtask(id);
+        historyManager.remove(id);
     }
 
     @Override
@@ -220,8 +235,8 @@ public class InMemoryTaskManager implements TaskManager{
         for (Epic epic : allEpics) {
             Epic currentEpic = epicRepository.findEpicById(epic.getId());
             if (currentEpic != null) {
-                currentEpic.getSubtaskIds().clear();
-                epic.updateStatusFromTaskManager(Status.NEW);
+                currentEpic.setSubtaskIds(new java.util.ArrayList<>());
+                currentEpic.updateStatusFromTaskManager(Status.NEW);
                 epicRepository.updateEpic(currentEpic);
             }
         }
@@ -231,11 +246,15 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Task createTask(Task task) {
-        task.setId(idGenerator.generateId());
-        if (task.getStatus() == null) {
-            task.setStatus(Status.NEW);
+        Task taskCopy = new Task(task.getTitle(), task.getDescription());
+        if (task.getStatus() != null) {
+            taskCopy.setStatus(task.getStatus());
+        } else {
+            taskCopy.setStatus(Status.NEW);
         }
-        return taskRepository.saveTask(task);
+        taskCopy.setId(idGenerator.generateId());
+
+        return taskRepository.saveTask(taskCopy);
     }
 
     @Override
@@ -247,9 +266,11 @@ public class InMemoryTaskManager implements TaskManager{
     public Task getTask(int id) {
         Task task = taskRepository.findTaskById(id);
         if (task != null) {
-            historyManager.add(task);
+            Task taskCopy = copyTask(task);
+            historyManager.add(taskCopy);
+            return taskCopy;
         }
-        return task;
+        return null;
     }
 
     @Override
@@ -275,5 +296,27 @@ public class InMemoryTaskManager implements TaskManager{
     @Override
     public List<Task> getHistory() {
         return historyManager.getHistory();
+    }
+
+    private Task copyTask(Task original) {
+        Task copy = new Task(original.getTitle(), original.getDescription());
+        copy.setId(original.getId());
+        copy.setStatus(original.getStatus());
+        return copy;
+    }
+
+    private Epic copyEpic(Epic original) {
+        Epic copy = new Epic(original.getTitle(), original.getDescription());
+        copy.setId(original.getId());
+        copy.updateStatusFromTaskManager(original.getStatus());
+        copy.setSubtaskIds(new java.util.ArrayList<>(original.getSubtaskIds()));
+        return copy;
+    }
+
+    private Subtask copySubtask(Subtask original) {
+        Subtask copy = new Subtask(original.getTitle(), original.getDescription(), original.getEpicId());
+        copy.setId(original.getId());
+        copy.setStatus(original.getStatus());
+        return copy;
     }
 }

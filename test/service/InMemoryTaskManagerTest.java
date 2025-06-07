@@ -36,18 +36,19 @@ class InMemoryTaskManagerTest {
 
     @Test
     void testTasksWithCustomAndGeneratedIdsDontConflict() {
-        Task customTask = new Task("Custom Task", "Custom Description");
-        customTask.setId(999);
-        taskManager.createTask(customTask);
-        customTask.setTitle("Updated Title");
-        taskManager.updateTask(customTask);
+        Task customTask = new Task(999, "Custom Task", "Custom Description");
+        Task savedCustomTask = taskManager.createTask(customTask);
 
+        assertNotEquals(999, savedCustomTask.getId(), "Task should get a new auto-generated ID");
+
+        savedCustomTask.setTitle("Updated Title");
+        taskManager.updateTask(savedCustomTask);
 
         Task autoTask = taskManager.createTask(new Task("Auto Task", "Auto Description"));
-        assertNotEquals(customTask.getId(), autoTask.getId(), "Custom and auto-generated ids should not conflict");
+        assertNotEquals(savedCustomTask.getId(), autoTask.getId(), "Custom and auto-generated ids should not conflict");
 
-        assertEquals(customTask.getTitle(), taskManager.getTask(customTask.getId()).getTitle(),
-                "Should retrieve the correct task with custom id");
+        assertEquals("Updated Title", taskManager.getTask(savedCustomTask.getId()).getTitle(),
+                "Should retrieve the correct task with updated title");
         assertEquals(autoTask.getTitle(), taskManager.getTask(autoTask.getId()).getTitle(),
                 "Should retrieve the correct task with auto-generated id");
     }
@@ -83,43 +84,104 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    void testHistoryLimitedToTenTasks() {
-        for (int i = 0; i < 15; i++) {
+    void testUnlimitedHistory() {
+        for (int i = 0; i < 25; i++) {
             Task task = taskManager.createTask(new Task("Task " + i, "Description " + i));
             taskManager.getTask(task.getId());
         }
 
         List<Task> history = taskManager.getHistory();
+        assertEquals(25, history.size(), "History should be unlimited");
 
-        assertEquals(10, history.size(), "History should be limited to 10 tasks");
+        assertEquals("Task 0", history.get(0).getTitle(), "First task in history should be Task 0");
+        assertEquals("Task 24", history.get(24).getTitle(), "Last task in history should be Task 24");
+    }
 
-        assertEquals("Task 5", history.get(0).getTitle(), "First task in history should be Task 5");
-        assertEquals("Task 14", history.get(9).getTitle(), "Last task in history should be Task 14");
+    @Test
+    void testHistoryNoDuplicates() {
+        Task task1 = taskManager.createTask(new Task("Task 1", "Description 1"));
+        Task task2 = taskManager.createTask(new Task("Task 2", "Description 2"));
+        Epic epic = taskManager.createEpic(new Epic("Epic", "Epic Description"));
+
+        taskManager.getTask(task1.getId());
+        taskManager.getTask(task2.getId());
+        taskManager.getEpic(epic.getId());
+
+        assertEquals(3, taskManager.getHistory().size());
+
+        taskManager.getTask(task1.getId());
+
+        List<Task> history = taskManager.getHistory();
+        assertEquals(3, history.size(), "History size should not increase on duplicate view");
+
+        assertEquals(task2, history.get(0));
+        assertEquals(epic, history.get(1));
+        assertEquals(task1, history.get(2), "Duplicate task should move to end");
+    }
+
+    @Test
+    void testHistoryAfterTaskDeletion() {
+        Task task1 = taskManager.createTask(new Task("Task 1", "Description 1"));
+        Task task2 = taskManager.createTask(new Task("Task 2", "Description 2"));
+
+        taskManager.getTask(task1.getId());
+        taskManager.getTask(task2.getId());
+
+        assertEquals(2, taskManager.getHistory().size());
+
+        taskManager.deleteTask(task1.getId());
+
+        List<Task> history = taskManager.getHistory();
+        assertEquals(1, history.size(), "History should remove deleted task");
+        assertEquals(task2.getId(), history.get(0).getId());
+    }
+
+    @Test
+    void testHistoryAfterEpicDeletion() {
+        Epic epic = taskManager.createEpic(new Epic("Epic", "Description"));
+        Subtask subtask1 = taskManager.createSubtask(new Subtask("Subtask 1", "Description", epic.getId()));
+        Subtask subtask2 = taskManager.createSubtask(new Subtask("Subtask 2", "Description", epic.getId()));
+        Task task = taskManager.createTask(new Task("Task", "Description"));
+
+        taskManager.getEpic(epic.getId());
+        taskManager.getSubtask(subtask1.getId());
+        taskManager.getSubtask(subtask2.getId());
+        taskManager.getTask(task.getId());
+
+        assertEquals(4, taskManager.getHistory().size());
+
+        taskManager.deleteEpic(epic.getId());
+
+        List<Task> history = taskManager.getHistory();
+        assertEquals(1, history.size(), "Only regular task should remain in history");
+        assertEquals(task.getId(), history.get(0).getId());
     }
 
     @Test
     void testHistoryManagerKeepsOriginalTaskState() {
         Task originalTask = taskManager.createTask(new Task("Original Title", "Original Description"));
-        String originalTitle = originalTask.getTitle();
-        String originalDescription = originalTask.getDescription();
-        Status originalStatus = originalTask.getStatus();
 
-        taskManager.getTask(originalTask.getId());
+        Task firstView = taskManager.getTask(originalTask.getId());
+
         Task updatedTask = new Task(originalTask.getId(), "Updated Title", "Updated Description");
         updatedTask.setStatus(Status.IN_PROGRESS);
         taskManager.updateTask(updatedTask);
 
-        Task retrievedTask = taskManager.getTask(originalTask.getId());
-        assertEquals("Updated Title", retrievedTask.getTitle());
-        assertEquals("Updated Description", retrievedTask.getDescription());
-        assertEquals(Status.IN_PROGRESS, retrievedTask.getStatus());
+        Task secondView = taskManager.getTask(originalTask.getId());
 
         List<Task> history = taskManager.getHistory();
+        assertEquals(1, history.size(), "History should have 1 element (no duplicates)");
 
-        assertFalse(history.isEmpty(), "History should not be empty");
-        Task taskInHistory = history.getFirst();
-        assertEquals(originalTitle, taskInHistory.getTitle(), "Task title in history should match the original");
-        assertEquals(originalDescription, taskInHistory.getDescription(), "Task description in history should match the original");
-        assertEquals(originalStatus, taskInHistory.getStatus(), "Task status in history should match the original");
+        Task taskInHistory = history.get(0);
+        assertEquals("Updated Title", taskInHistory.getTitle(), "Task title in history should match the last viewed state");
+        assertEquals("Updated Description", taskInHistory.getDescription(), "Task description in history should match the last viewed state");
+        assertEquals(Status.IN_PROGRESS, taskInHistory.getStatus(), "Task status in history should match the last viewed state");
+
+        firstView.setTitle("Should not affect manager");
+        secondView.setDescription("Should not affect manager");
+
+        Task freshCopy = taskManager.getTask(originalTask.getId());
+        assertEquals("Updated Title", freshCopy.getTitle(), "Manager data should not be affected by external changes");
+        assertEquals("Updated Description", freshCopy.getDescription(), "Manager data should not be affected by external changes");
     }
 }

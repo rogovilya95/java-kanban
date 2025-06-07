@@ -14,7 +14,11 @@ public class TaskRepositoryImpl implements TaskRepository {
 
     @Override
     public Task findTaskById(int id) {
-        return tasks.get(id);
+        Task task = tasks.get(id);
+        if (task == null) {
+            return null;
+        }
+        return copyTask(task);
     }
 
     @Override
@@ -27,7 +31,7 @@ public class TaskRepositoryImpl implements TaskRepository {
 
         for (Task task : tasks.values()) {
             if(title.equalsIgnoreCase(task.getTitle())) {
-                result.add(task);
+                result.add(copyTask(task));
             }
         }
 
@@ -44,7 +48,7 @@ public class TaskRepositoryImpl implements TaskRepository {
 
         for (Task task : tasks.values()) {
             if(description.equalsIgnoreCase(task.getDescription())) {
-                result.add(task);
+                result.add(copyTask(task));
             }
         }
 
@@ -53,16 +57,18 @@ public class TaskRepositoryImpl implements TaskRepository {
 
     @Override
     public List<Task> findAllTasks() {
-        return new ArrayList<>(tasks.values());
+        List<Task> result = new ArrayList<>();
+        for (Task task : tasks.values()) {
+            result.add(copyTask(task));
+        }
+        return result;
     }
 
     @Override
     public Task saveTask(Task task) {
-        // Note: I think it is better to create IDs in TaskManager so all tasks use the same ID system
-        // and to keep repositories focused only on storage,
-        // also current version is easier to be replaced if i want to change the method of ID generation
-        tasks.put(task.getId(), task);
-        return task;
+        Task taskCopy = copyTask(task);
+        tasks.put(taskCopy.getId(), taskCopy);
+        return copyTask(taskCopy);
     }
 
     @Override
@@ -70,7 +76,7 @@ public class TaskRepositoryImpl implements TaskRepository {
         if (!tasks.containsKey(task.getId())) {
             throw new TaskNotFoundException(task.getId());
         }
-        tasks.put(task.getId(), task);
+        tasks.put(task.getId(), copyTask(task));
     }
 
     @Override
@@ -81,5 +87,12 @@ public class TaskRepositoryImpl implements TaskRepository {
     @Override
     public void deleteAllTasks() {
         tasks.clear();
+    }
+
+    private Task copyTask(Task original) {
+        Task copy = new Task(original.getTitle(), original.getDescription());
+        copy.setId(original.getId());
+        copy.setStatus(original.getStatus());
+        return copy;
     }
 }

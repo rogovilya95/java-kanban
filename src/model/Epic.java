@@ -13,7 +13,7 @@ public class Epic extends Task {
 
     public Epic(int id, String title, String description, ArrayList<Integer> subtaskIds) {
         super(id, title, description);
-        this.subtaskIds = subtaskIds;
+        this.subtaskIds = subtaskIds != null ? new ArrayList<>(subtaskIds) : new ArrayList<>();
     }
 
     public ArrayList<Integer> getSubtaskIds() {
@@ -21,7 +21,7 @@ public class Epic extends Task {
     }
 
     public void setSubtaskIds(ArrayList<Integer> subtaskIds) {
-        this.subtaskIds = subtaskIds;
+        this.subtaskIds = subtaskIds != null ? new ArrayList<>(subtaskIds) : new ArrayList<>();
     }
 
     public void addSubtaskId(int id) {
@@ -29,7 +29,7 @@ public class Epic extends Task {
     }
 
     public void removeSubtaskId(Integer id) {
-        this.subtaskIds.remove(Integer.valueOf(id));
+        this.subtaskIds.remove(id);
     }
 
     @Override
