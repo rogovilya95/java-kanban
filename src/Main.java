@@ -83,29 +83,41 @@ public class Main {
             System.out.println("### Изменение статусов задач ###");
             System.out.println("################################");
 
-            // Обновляем статус задачи
-            task1.setStatus(Status.IN_PROGRESS);
-            taskManager.updateTask(task1);
-            System.out.println("Обновлен статус задачи '" + task1.getTitle() + "': " + task1.getStatus());
+            // Обновляем статус задачи - создаем новый объект для обновления
+            Task updatedTask1 = new Task(task1.getId(), task1.getTitle(), task1.getDescription());
+            updatedTask1.setStatus(Status.IN_PROGRESS);
+            taskManager.updateTask(updatedTask1);
+            System.out.println("Обновлен статус задачи '" + task1.getTitle() + "': " +
+                    taskManager.getTask(task1.getId()).getStatus());
 
-            // Обновляем статусы подзадач и проверяем статуса эпика
-            invites.setStatus(Status.DONE);
-            groceries.setStatus(Status.IN_PROGRESS);
+            // Обновляем статусы подзадач и проверяем статус эпика
+            Subtask updatedInvites = new Subtask(invites.getTitle(), invites.getDescription(), invites.getEpicId());
+            updatedInvites.setId(invites.getId());
+            updatedInvites.setStatus(Status.DONE);
+            taskManager.updateSubtask(updatedInvites);
 
-            taskManager.updateSubtask(invites);
-            taskManager.updateSubtask(groceries);
+            Subtask updatedGroceries = new Subtask(groceries.getTitle(), groceries.getDescription(), groceries.getEpicId());
+            updatedGroceries.setId(groceries.getId());
+            updatedGroceries.setStatus(Status.IN_PROGRESS);
+            taskManager.updateSubtask(updatedGroceries);
 
             System.out.println("Обновлены статусы подзадач эпика 'День рождения'");
-            System.out.println("- " + invites.getTitle() + ": " + invites.getStatus());
-            System.out.println("- " + groceries.getTitle() + ": " + groceries.getStatus());
-            System.out.println("Статус эпика 'День рождения': " + taskManager.getEpic(birthday.getId()).getStatus());
+            System.out.println("- " + invites.getTitle() + ": " +
+                    taskManager.getSubtask(invites.getId()).getStatus());
+            System.out.println("- " + groceries.getTitle() + ": " +
+                    taskManager.getSubtask(groceries.getId()).getStatus());
+            System.out.println("Статус эпика 'День рождения': " +
+                    taskManager.getEpic(birthday.getId()).getStatus());
 
             // Теперь делаем все подзадачи DONE и проверим статус эпика
-            groceries.setStatus(Status.DONE);
-            taskManager.updateSubtask(groceries);
+            Subtask finalGroceries = new Subtask(groceries.getTitle(), groceries.getDescription(), groceries.getEpicId());
+            finalGroceries.setId(groceries.getId());
+            finalGroceries.setStatus(Status.DONE);
+            taskManager.updateSubtask(finalGroceries);
 
             System.out.println("Все подзадачи эпика 'День рождения' выполнены");
-            System.out.println("Статус эпика 'День рождения': " + taskManager.getEpic(birthday.getId()).getStatus());
+            System.out.println("Статус эпика 'День рождения': " +
+                    taskManager.getEpic(birthday.getId()).getStatus());
 
             // 6. Удаление задач
             System.out.println("\n######################");
@@ -167,15 +179,46 @@ public class Main {
             System.out.println("Просмотр подзадачи: " + invites.getTitle());
             taskManager.getSubtask(invites.getId());
 
-            System.out.println("\nИстория просмотров:");
-            for (Task task : taskManager.getHistory()) {
-                System.out.println("- " + task);
+            // Добавим дополнительные просмотры для демонстрации отсутствия дубликатов
+            System.out.println("Повторный просмотр задачи: " + task1.getTitle());
+            taskManager.getTask(task1.getId());
+
+            System.out.println("Повторный просмотр эпика: " + birthday.getTitle());
+            taskManager.getEpic(birthday.getId());
+
+            System.out.println("\nИстория просмотров (без дубликатов):");
+            List<Task> history = taskManager.getHistory();
+            for (int i = 0; i < history.size(); i++) {
+                Task task = history.get(i);
+                System.out.println((i + 1) + ". " + task);
             }
+            System.out.println("Всего в истории: " + history.size() + " записей");
+
+            // 9. Демонстрация удаления из истории
+            System.out.println("\n####################################");
+            System.out.println("### Удаление задачи из истории ###");
+            System.out.println("####################################");
+
+            System.out.println("Удаляем задачу с ID " + task1.getId());
+            taskManager.deleteTask(task1.getId());
+
+            System.out.println("История после удаления задачи:");
+            List<Task> historyAfterDeletion = taskManager.getHistory();
+            if (historyAfterDeletion.isEmpty()) {
+                System.out.println("История пуста");
+            } else {
+                for (int i = 0; i < historyAfterDeletion.size(); i++) {
+                    Task task = historyAfterDeletion.get(i);
+                    System.out.println((i + 1) + ". " + task);
+                }
+            }
+            System.out.println("Всего в истории: " + historyAfterDeletion.size() + " записей");
 
         } catch (TaskNotFoundException e) {
             System.err.println("Ошибка при работе с задачами: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Непредвиденная ошибка: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
