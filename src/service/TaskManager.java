@@ -1,17 +1,12 @@
 package service;
 
-import exception.TaskNotFoundException;
 import model.Epic;
-import model.Status;
 import model.Subtask;
 import model.Task;
-import repository.EpicRepository;
-import repository.SubtaskRepository;
-import repository.TaskRepository;
 
 import java.util.List;
 
-public interface TaskManager{
+public interface TaskManager {
 
     // Task
     Task createTask(Task task);
