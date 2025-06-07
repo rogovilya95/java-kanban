@@ -30,7 +30,7 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
             return result;
         }
 
-        for(Subtask subtask : subtasks.values()) {
+        for (Subtask subtask : subtasks.values()) {
             if (title.equalsIgnoreCase(subtask.getTitle())) {
                 result.add(copySubtask(subtask));
             }
@@ -46,7 +46,7 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
             return result;
         }
 
-        for(Subtask subtask : subtasks.values()) {
+        for (Subtask subtask : subtasks.values()) {
             if (description.equalsIgnoreCase(subtask.getDescription())) {
                 result.add(copySubtask(subtask));
             }
