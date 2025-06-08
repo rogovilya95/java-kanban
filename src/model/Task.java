@@ -60,6 +60,13 @@ public class Task {
         this.id = id;
     }
 
+    public Task copy() {
+        Task copy = new Task(this.title, this.description);
+        copy.setId(this.id);
+        copy.setStatus(this.status);
+        return copy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

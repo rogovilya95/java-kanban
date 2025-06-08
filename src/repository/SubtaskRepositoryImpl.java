@@ -130,9 +130,6 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
     }
 
     private Subtask copySubtask(Subtask original) {
-        Subtask copy = new Subtask(original.getTitle(), original.getDescription(), original.getEpicId());
-        copy.setId(original.getId());
-        copy.setStatus(original.getStatus());
-        return copy;
+        return original.copy();
     }
 }

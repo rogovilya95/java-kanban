@@ -11,7 +11,7 @@ import repository.TaskRepository;
 
 import java.util.List;
 
-public class InMemoryTaskManager implements TaskManager {
+public class InMemoryTaskManager implements TaskManager{
 
     private final IdGenerator idGenerator;
     private final TaskRepository taskRepository;
@@ -65,7 +65,7 @@ public class InMemoryTaskManager implements TaskManager {
     private void updateEpicStatus(int id) {
         Epic epic = epicRepository.findEpicById(id);
         if (epic == null) {
-            throw new TaskNotFoundException("Epic with id " + id + " not found");
+            throw new TaskNotFoundException("Epic with id " + id +" not found");
         }
         List<Subtask> subtasks = getEpicSubtasks(epic.getId());
 
@@ -299,24 +299,14 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     private Task copyTask(Task original) {
-        Task copy = new Task(original.getTitle(), original.getDescription());
-        copy.setId(original.getId());
-        copy.setStatus(original.getStatus());
-        return copy;
+        return original.copy();
     }
 
     private Epic copyEpic(Epic original) {
-        Epic copy = new Epic(original.getTitle(), original.getDescription());
-        copy.setId(original.getId());
-        copy.updateStatusFromTaskManager(original.getStatus());
-        copy.setSubtaskIds(new java.util.ArrayList<>(original.getSubtaskIds()));
-        return copy;
+        return original.copy();
     }
 
     private Subtask copySubtask(Subtask original) {
-        Subtask copy = new Subtask(original.getTitle(), original.getDescription(), original.getEpicId());
-        copy.setId(original.getId());
-        copy.setStatus(original.getStatus());
-        return copy;
+        return original.copy();
     }
 }
