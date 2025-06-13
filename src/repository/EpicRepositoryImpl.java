@@ -14,7 +14,11 @@ public class EpicRepositoryImpl implements EpicRepository {
 
     @Override
     public Epic findEpicById(int id) {
-        return epics.get(id);
+        Epic epic = epics.get(id);
+        if (epic == null) {
+            return null;
+        }
+        return copyEpic(epic);
     }
 
     @Override
@@ -24,8 +28,8 @@ public class EpicRepositoryImpl implements EpicRepository {
             return result;
         }
         for (Epic epic : epics.values()) {
-            if(title.equalsIgnoreCase(epic.getTitle())) {
-                result.add(epic);
+            if (title.equalsIgnoreCase(epic.getTitle())) {
+                result.add(copyEpic(epic));
             }
         }
         return result;
@@ -38,8 +42,8 @@ public class EpicRepositoryImpl implements EpicRepository {
             return result;
         }
         for (Epic epic : epics.values()) {
-            if(description.equalsIgnoreCase(epic.getDescription())) {
-                result.add(epic);
+            if (description.equalsIgnoreCase(epic.getDescription())) {
+                result.add(copyEpic(epic));
             }
         }
         return result;
@@ -47,21 +51,26 @@ public class EpicRepositoryImpl implements EpicRepository {
 
     @Override
     public List<Epic> findAllEpics() {
-        return new ArrayList<>(epics.values());
+        List<Epic> result = new ArrayList<>();
+        for (Epic epic : epics.values()) {
+            result.add(copyEpic(epic));
+        }
+        return result;
     }
 
     @Override
     public Epic saveEpic(Epic epic) {
-        epics.put(epic.getId(), epic);
-        return epic;
+        Epic epicCopy = copyEpic(epic);
+        epics.put(epicCopy.getId(), epicCopy);
+        return copyEpic(epicCopy);
     }
 
     @Override
     public void updateEpic(Epic epic) {
-        if(!epics.containsKey(epic.getId())) {
+        if (!epics.containsKey(epic.getId())) {
             throw new TaskNotFoundException(epic.getId());
         }
-        epics.put(epic.getId(), epic);
+        epics.put(epic.getId(), copyEpic(epic));
     }
 
     @Override
@@ -76,5 +85,13 @@ public class EpicRepositoryImpl implements EpicRepository {
         epics.clear();
         // Note: TaskManager will delete the subtasks too.
         // Repositories should only work with their own data.
+    }
+
+    private Epic copyEpic(Epic original) {
+        Epic copy = new Epic(original.getTitle(), original.getDescription());
+        copy.setId(original.getId());
+        copy.updateStatusFromTaskManager(original.getStatus());
+        copy.setSubtaskIds(new ArrayList<>(original.getSubtaskIds()));
+        return copy;
     }
 }

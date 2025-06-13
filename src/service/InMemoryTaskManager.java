@@ -11,7 +11,7 @@ import repository.TaskRepository;
 
 import java.util.List;
 
-public class InMemoryTaskManager implements TaskManager{
+public class InMemoryTaskManager implements TaskManager {
 
     private final IdGenerator idGenerator;
     private final TaskRepository taskRepository;
@@ -33,8 +33,9 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Epic createEpic(Epic epic) {
-        epic.setId(idGenerator.generateId());
-        Epic createdEpic = epicRepository.saveEpic(epic);
+        Epic epicCopy = new Epic(epic.getTitle(), epic.getDescription());
+        epicCopy.setId(idGenerator.generateId());
+        Epic createdEpic = epicRepository.saveEpic(epicCopy);
         updateEpicStatus(createdEpic.getId());
         return createdEpic;
     }
@@ -48,9 +49,11 @@ public class InMemoryTaskManager implements TaskManager{
     public Epic getEpic(int id) {
         Epic epic = epicRepository.findEpicById(id);
         if (epic != null) {
-            historyManager.add(epic);
+            Epic epicCopy = copyEpic(epic);
+            historyManager.add(epicCopy);
+            return epicCopy;
         }
-        return epic;
+        return null;
     }
 
     @Override
@@ -62,7 +65,7 @@ public class InMemoryTaskManager implements TaskManager{
     private void updateEpicStatus(int id) {
         Epic epic = epicRepository.findEpicById(id);
         if (epic == null) {
-            throw new TaskNotFoundException("Epic with id " + id +" not found");
+            throw new TaskNotFoundException("Epic with id " + id + " not found");
         }
         List<Subtask> subtasks = getEpicSubtasks(epic.getId());
 
@@ -100,14 +103,25 @@ public class InMemoryTaskManager implements TaskManager{
         if (epicToDelete == null) {
             throw new TaskNotFoundException("Epic with id " + id + " not found");
         }
+
         for (Integer subtaskId : epicToDelete.getSubtaskIds()) {
             subtaskRepository.deleteSubtask(subtaskId);
+            historyManager.remove(subtaskId);
         }
+
         epicRepository.deleteEpic(id);
+        historyManager.remove(id);
     }
 
     @Override
     public void deleteAllEpics() {
+        for (Epic epic : getAllEpics()) {
+            historyManager.remove(epic.getId());
+        }
+        for (Subtask subtask : getAllSubtasks()) {
+            historyManager.remove(subtask.getId());
+        }
+
         subtaskRepository.deleteAllSubtasks();
         epicRepository.deleteAllEpics();
     }
@@ -123,9 +137,14 @@ public class InMemoryTaskManager implements TaskManager{
             throw new TaskNotFoundException("Epic with id " + subtask.getEpicId() + " not found");
         }
 
-        subtask.setId(idGenerator.generateId());
-        Subtask createdSubtask = subtaskRepository.saveSubtask(subtask);
-        epic.addSubtaskId(subtask.getId());
+        Subtask subtaskCopy = new Subtask(subtask.getTitle(), subtask.getDescription(), subtask.getEpicId());
+        if (subtask.getStatus() != null) {
+            subtaskCopy.setStatus(subtask.getStatus());
+        }
+        subtaskCopy.setId(idGenerator.generateId());
+
+        Subtask createdSubtask = subtaskRepository.saveSubtask(subtaskCopy);
+        epic.addSubtaskId(subtaskCopy.getId());
         epicRepository.updateEpic(epic);
         updateEpicStatus(epic.getId());
 
@@ -141,9 +160,11 @@ public class InMemoryTaskManager implements TaskManager{
     public Subtask getSubtask(int id) {
         Subtask subtask = subtaskRepository.findSubtaskById(id);
         if (subtask != null) {
-            historyManager.add(subtask);
+            Subtask subtaskCopy = copySubtask(subtask);
+            historyManager.add(subtaskCopy);
+            return subtaskCopy;
         }
-        return subtask;
+        return null;
     }
 
     @Override
@@ -165,11 +186,15 @@ public class InMemoryTaskManager implements TaskManager{
         if (subtaskToUpdate == null) {
             throw new TaskNotFoundException("Subtask with id " + subtask.getId() + " not found");
         }
-        if(subtaskToUpdate.getEpicId() != subtask.getEpicId()) {
-            Epic oldEpic = epicRepository.findEpicById(subtaskToUpdate.getEpicId());
-            Epic newEpic = epicRepository.findEpicById(subtask.getEpicId());
+
+        int oldEpicId = subtaskToUpdate.getEpicId();
+        int newEpicId = subtask.getEpicId();
+
+        if (oldEpicId != newEpicId) {
+            Epic oldEpic = epicRepository.findEpicById(oldEpicId);
+            Epic newEpic = epicRepository.findEpicById(newEpicId);
             if (newEpic == null) {
-                throw new TaskNotFoundException("Epic with id " + subtask.getEpicId() + " not found");
+                throw new TaskNotFoundException("Epic with id " + newEpicId + " not found");
             }
             if (oldEpic != null) {
                 oldEpic.removeSubtaskId(subtask.getId());
@@ -196,17 +221,22 @@ public class InMemoryTaskManager implements TaskManager{
             updateEpicStatus(epic.getId());
         }
         subtaskRepository.deleteSubtask(id);
+        historyManager.remove(id);
     }
 
     @Override
     public void deleteAllSubtask() {
+        for (Subtask subtask : getAllSubtasks()) {
+            historyManager.remove(subtask.getId());
+        }
+
         List<Epic> allEpics = epicRepository.findAllEpics();
 
         for (Epic epic : allEpics) {
             Epic currentEpic = epicRepository.findEpicById(epic.getId());
             if (currentEpic != null) {
-                currentEpic.getSubtaskIds().clear();
-                epic.updateStatusFromTaskManager(Status.NEW);
+                currentEpic.setSubtaskIds(new java.util.ArrayList<>());
+                currentEpic.updateStatusFromTaskManager(Status.NEW);
                 epicRepository.updateEpic(currentEpic);
             }
         }
@@ -216,11 +246,15 @@ public class InMemoryTaskManager implements TaskManager{
 
     @Override
     public Task createTask(Task task) {
-        task.setId(idGenerator.generateId());
-        if (task.getStatus() == null) {
-            task.setStatus(Status.NEW);
+        Task taskCopy = new Task(task.getTitle(), task.getDescription());
+        if (task.getStatus() != null) {
+            taskCopy.setStatus(task.getStatus());
+        } else {
+            taskCopy.setStatus(Status.NEW);
         }
-        return taskRepository.saveTask(task);
+        taskCopy.setId(idGenerator.generateId());
+
+        return taskRepository.saveTask(taskCopy);
     }
 
     @Override
@@ -232,9 +266,11 @@ public class InMemoryTaskManager implements TaskManager{
     public Task getTask(int id) {
         Task task = taskRepository.findTaskById(id);
         if (task != null) {
-            historyManager.add(task);
+            Task taskCopy = copyTask(task);
+            historyManager.add(taskCopy);
+            return taskCopy;
         }
-        return task;
+        return null;
     }
 
     @Override
@@ -245,15 +281,32 @@ public class InMemoryTaskManager implements TaskManager{
     @Override
     public void deleteTask(int id) {
         taskRepository.deleteTask(id);
+        historyManager.remove(id);
     }
 
     @Override
     public void deleteAllTasks() {
+        for (Task task : getAllTasks()) {
+            historyManager.remove(task.getId());
+        }
+
         taskRepository.deleteAllTasks();
     }
 
     @Override
     public List<Task> getHistory() {
         return historyManager.getHistory();
+    }
+
+    private Task copyTask(Task original) {
+        return original.copy();
+    }
+
+    private Epic copyEpic(Epic original) {
+        return original.copy();
+    }
+
+    private Subtask copySubtask(Subtask original) {
+        return original.copy();
     }
 }

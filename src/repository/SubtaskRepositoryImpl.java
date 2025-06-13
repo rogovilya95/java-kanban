@@ -15,7 +15,11 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
 
     @Override
     public Subtask findSubtaskById(int id) {
-        return subtasks.get(id);
+        Subtask subtask = subtasks.get(id);
+        if (subtask == null) {
+            return null;
+        }
+        return copySubtask(subtask);
     }
 
     @Override
@@ -26,9 +30,9 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
             return result;
         }
 
-        for(Subtask subtask : subtasks.values()) {
+        for (Subtask subtask : subtasks.values()) {
             if (title.equalsIgnoreCase(subtask.getTitle())) {
-                result.add(subtask);
+                result.add(copySubtask(subtask));
             }
         }
         return result;
@@ -42,9 +46,9 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
             return result;
         }
 
-        for(Subtask subtask : subtasks.values()) {
+        for (Subtask subtask : subtasks.values()) {
             if (description.equalsIgnoreCase(subtask.getDescription())) {
-                result.add(subtask);
+                result.add(copySubtask(subtask));
             }
         }
         return result;
@@ -52,7 +56,11 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
 
     @Override
     public List<Subtask> findAllSubtasks() {
-        return new ArrayList<>(subtasks.values());
+        List<Subtask> result = new ArrayList<>();
+        for (Subtask subtask : subtasks.values()) {
+            result.add(copySubtask(subtask));
+        }
+        return result;
     }
 
     @Override
@@ -60,6 +68,7 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
         List<Integer> subtaskIds = subtasksByEpicId.getOrDefault(epicId, new ArrayList<>());
         return subtaskIds.stream()
                 .map(subtasks::get)
+                .map(this::copySubtask)
                 .collect(Collectors.toList());
     }
 
@@ -68,11 +77,12 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
         int subtaskId = subtask.getId();
         int epicId = subtask.getEpicId();
 
-        subtasks.put(subtaskId, subtask);
+        Subtask subtaskCopy = copySubtask(subtask);
+        subtasks.put(subtaskId, subtaskCopy);
 
         subtasksByEpicId.computeIfAbsent(epicId, k -> new ArrayList<>()).add(subtaskId);
 
-        return subtask;
+        return copySubtask(subtaskCopy);
     }
 
     @Override
@@ -96,7 +106,7 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
             subtasksByEpicId.computeIfAbsent(newEpicId, k -> new ArrayList<>()).add(subtaskId);
         }
 
-        subtasks.put(subtaskId, subtask);
+        subtasks.put(subtaskId, copySubtask(subtask));
     }
 
     @Override
@@ -117,5 +127,9 @@ public class SubtaskRepositoryImpl implements SubtaskRepository {
     public void deleteAllSubtasks() {
         subtasks.clear();
         subtasksByEpicId.clear();
+    }
+
+    private Subtask copySubtask(Subtask original) {
+        return original.copy();
     }
 }
